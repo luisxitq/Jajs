@@ -1866,54 +1866,50 @@ function markAsInstalled(appId, version) {
 
 function installApp(appId) {
   if (checkMaintenanceMode()) { showToast('Maintenance mode active. Try again later.', 'warning'); return; }
-  
-  const app=state.apps[appId]; if (!app) return;
-  if (!app.download_link) { showToast('Download link not available','error'); return; }
-  
-  const btn=document.getElementById('install-btn'); if (!btn) return;
-  const isInstalled = checkIfInstalled(appId);
-  
-  if (isInstalled) {
-    // Reinstall / Update
-    btn.disabled=true; btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> Updating...`;
-    simulateInstallation(appId, app, btn, true);
-  } else {
-    btn.disabled=true; btn.innerHTML=`<i class="fas fa-spinner fa-spin"></i> Downloading...`;
-    simulateInstallation(appId, app, btn, false);
-  }
+
+  const app = state.apps[appId];
+  if (!app) return;
+  if (!app.download_link) { showToast('Download link not available', 'error'); return; }
+
+  const btn = document.getElementById('install-btn');
+  if (!btn) return;
+
+  btn.disabled = true;
+  simulateInstallation(appId, app, btn);
 }
 
-function simulateInstallation(appId, app, btn, isUpdate) {
-  let pct=0;
-  btn.innerHTML=`<div class="w-full"><div class="flex justify-between text-xs mb-1"><span>${isUpdate ? 'Updating...' : 'Downloading...'}</span><span id="dl-pct">0%</span></div><div class="w-full h-1.5 bg-white/20 rounded-full overflow-hidden"><div id="dl-bar" class="h-full bg-white rounded-full transition-all" style="width:0%"></div></div></div>`;
-  
-  const interval=setInterval(()=>{
-    pct+=Math.random()*15;
-    if (pct>=100) {
-      pct=100; clearInterval(interval);
-      
-      if (!isUpdate) {
-        const uid=state.currentUser?.uid;
-        if (uid) {
-          db.ref('downloads').push().set({userId:uid,appId,created_at:Date.now()});
-          db.ref(`apps/${appId}/downloads`).transaction(c=>(c||0)+1);
-        }
+function simulateInstallation(appId, app, btn) {
+  let pct = 0;
+  btn.innerHTML = `<div class="w-full"><div class="flex justify-between text-xs mb-1"><span>Downloading...</span><span id="dl-pct">0%</span></div><div class="w-full h-1.5 bg-white/20 rounded-full overflow-hidden"><div id="dl-bar" class="h-full bg-white rounded-full transition-all" style="width:0%"></div></div></div>`;
+
+  const interval = setInterval(() => {
+    pct += Math.random() * 15;
+    if (pct >= 100) {
+      pct = 100;
+      clearInterval(interval);
+
+      const uid = state.currentUser?.uid;
+      if (uid) {
+        db.ref('downloads').push().set({ userId: uid, appId, created_at: Date.now() });
+        db.ref('apps/' + appId + '/downloads').transaction(c => (c || 0) + 1);
       }
-      
       markAsInstalled(appId, app.version);
-      
-      setTimeout(()=>{ 
-        window.open(app.download_link,'_blank'); 
-        btn.innerHTML=`<i class="fas fa-check-circle"></i> Installed`; 
-        btn.className='w-full bg-emerald-600 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2';
-        btn.disabled=false;
-        showToast(isUpdate ? 'App updated!' : 'Download started!','success');
-      },300);
+
+      setTimeout(() => {
+        window.open(app.download_link, '_blank');
+        // Always restore to Install — never show Installed / Update
+        btn.innerHTML = '<i class="fas fa-download"></i> Install';
+        btn.className = 'w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:from-indigo-500 hover:to-purple-500 transition';
+        btn.disabled = false;
+        showToast('Download started!', 'success');
+      }, 300);
     } else {
-      const dlPct=document.getElementById('dl-pct'); const dlBar=document.getElementById('dl-bar');
-      if (dlPct) dlPct.textContent=Math.round(pct)+'%'; if (dlBar) dlBar.style.width=pct+'%';
+      const dlPct = document.getElementById('dl-pct');
+      const dlBar = document.getElementById('dl-bar');
+      if (dlPct) dlPct.textContent = Math.round(pct) + '%';
+      if (dlBar) dlBar.style.width = pct + '%';
     }
-  },100);
+  }, 100);
 }
 
 function simulateInstall(appId) { navigateTo('app-detail',appId); }
@@ -2013,12 +2009,9 @@ function renderAppDetailPage() {
       ${maintenanceBlock}
 
       <div id="install-btn-container">
-        ${installed
-          ?`<div class="flex gap-3">
-              <button class="flex-1 bg-emerald-600 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg" disabled><i class="fas fa-check-circle"></i> Installed</button>
-              <button onclick="installApp('${id}')" id="install-btn" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:from-indigo-500 hover:to-purple-500 transition"><i class="fas fa-sync-alt"></i> Update</button>
-            </div>`
-          :`<button onclick="installApp('${id}')" id="install-btn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:from-indigo-500 hover:to-purple-500 transition"><i class="fas fa-download"></i> Install Now • Free</button>`}
+        <button onclick="installApp('${id}')" id="install-btn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:from-indigo-500 hover:to-purple-500 transition">
+          <i class="fas fa-download"></i> Install
+        </button>
       </div>
     </div>
 
@@ -2082,7 +2075,7 @@ function loadPublisherSection(publisherId) {
                 <p class="text-slate-500 text-xs" id="pub-follower-count-${publisherId}">Loading...</p>
               </div>
             </div>
-            ${publisherId!==uid?`<button onclick="toggleFollow('${publisherId}','${followId||''}')" id="follow-btn-${publisherId}" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${followId?'bg-slate-700 text-slate-300':'bg-indigo-600 text-white'}">${followId?'<i class="fas fa-user-check mr-1"></i>Subscribed':'<i class="fas fa-user-plus mr-1"></i>Subscribe'}</button>`:''}
+            ${publisherId!==uid?`<button onclick="toggleFollow('${publisherId}','${followId||''}')" id="follow-btn-${publisherId}" data-follow-id="${followId||''}" class="px-4 py-2 rounded-xl text-xs font-semibold transition ${followId?'bg-slate-700 text-slate-300':'bg-indigo-600 text-white'}">${followId?'<i class="fas fa-user-check mr-1"></i>Subscribed':'<i class="fas fa-user-plus mr-1"></i>Subscribe'}</button>`:''}
           </div>
           ${(pub.social_links?.telegram||pub.social_links?.facebook||pub.social_links?.tiktok||pub.social_links?.youtube)?`
           <div class="flex items-center gap-3 mt-3 pt-3 border-t border-slate-700">
@@ -2101,64 +2094,113 @@ function loadPublisherSection(publisherId) {
   });
 }
 function loadFollowerCount(userId) {
-  db.ref('follows').orderByChild('followingId').equalTo(userId).once('value',snap=>{
-    const el=document.getElementById(`pub-follower-count-${userId}`);
-    if (el) el.textContent=`${formatNum(snap.numChildren())} subscribers`;
+  db.ref('follows').orderByChild('followingId').equalTo(userId).once('value', snap => {
+    const count = snap.numChildren();
+    const el = document.getElementById('pub-follower-count-' + userId);
+    if (el) el.textContent = formatNum(count) + ' subscribers';
+    // Also update public profile page count text if visible
+    const profilePage = document.getElementById('page-public-profile');
+    if (profilePage && profilePage.classList.contains('active')) {
+      const countEl = profilePage.querySelector('.text-slate-500.text-xs.mt-1');
+      if (countEl && countEl.textContent.includes('subscriber')) {
+        const appsMatch = countEl.textContent.match(/(\d+)\s*apps?/i);
+        const appsText = appsMatch ? appsMatch[0] : '';
+        countEl.textContent = formatNum(count) + ' subscribers' + (appsText ? ' • ' + appsText : '');
+      }
+    }
   });
 }
+function updateFollowButton(targetId, isSubscribed, followKey) {
+  const btn = document.getElementById('follow-btn-' + targetId);
+  if (!btn) return;
+
+  const isFullWidth = btn.className.includes('w-full') || btn.classList.contains('w-full');
+
+  if (isSubscribed) {
+    btn.className = isFullWidth
+      ? 'w-full py-3 rounded-xl font-semibold text-sm mb-5 transition bg-slate-700 text-slate-300'
+      : 'px-4 py-2 rounded-xl text-xs font-semibold transition bg-slate-700 text-slate-300';
+    btn.innerHTML = isFullWidth
+      ? '<i class="fas fa-user-check mr-2"></i>Subscribed'
+      : '<i class="fas fa-user-check mr-1"></i>Subscribed';
+    btn.setAttribute('data-follow-id', followKey || '');
+    btn.onclick = function() { toggleFollow(targetId, followKey || btn.getAttribute('data-follow-id')); };
+  } else {
+    btn.className = isFullWidth
+      ? 'w-full py-3 rounded-xl font-semibold text-sm mb-5 transition bg-indigo-600 text-white'
+      : 'px-4 py-2 rounded-xl text-xs font-semibold transition bg-indigo-600 text-white';
+    btn.innerHTML = isFullWidth
+      ? '<i class="fas fa-user-plus mr-2"></i>Subscribe'
+      : '<i class="fas fa-user-plus mr-1"></i>Subscribe';
+    btn.setAttribute('data-follow-id', '');
+    btn.onclick = function() { toggleFollow(targetId, null); };
+  }
+}
+
 function toggleFollow(targetId, existingFollowId) {
   const uid = state.currentUser?.uid;
   if (!uid) { showToast('Please sign in', 'error'); return; }
   if (uid === targetId) return;
 
-  // Fix: when followId is null it becomes the string "null" in HTML onclick
-  const followId = (existingFollowId && existingFollowId !== 'null' && existingFollowId !== 'undefined')
-    ? existingFollowId
-    : null;
-
   const btn = document.getElementById('follow-btn-' + targetId);
 
+  // Normalize: treat "null", "undefined", empty string as not subscribed
+  let followId = existingFollowId;
+  if (!followId || followId === 'null' || followId === 'undefined' || followId === '') {
+    // Also check data attribute as fallback
+    followId = (btn && btn.getAttribute('data-follow-id')) || null;
+    if (!followId || followId === 'null' || followId === 'undefined' || followId === '') {
+      followId = null;
+    }
+  }
+
   if (followId) {
-    // Unsubscribe
-    db.ref('follows/' + followId).remove().then(() => {
-      showToast('Unsubscribed', 'info');
-      if (btn) {
-        btn.className = 'px-4 py-2 rounded-xl text-xs font-semibold transition bg-indigo-600 text-white';
-        btn.innerHTML = '<i class="fas fa-user-plus mr-1"></i>Subscribe';
-        btn.onclick = function() { toggleFollow(targetId, null); };
-      }
-      loadFollowerCount(targetId);
-      // Also update public profile button if present
-      const pubBtn = document.getElementById('follow-btn-' + targetId);
-      if (pubBtn && pubBtn !== btn) {
-        pubBtn.className = 'w-full py-3 rounded-xl font-semibold text-sm mb-5 transition bg-indigo-600 text-white';
-        pubBtn.innerHTML = '<i class="fas fa-user-plus mr-2"></i>Subscribe';
-        pubBtn.onclick = function() { toggleFollow(targetId, null); };
-      }
-    }).catch(e => showToast('Error: ' + e.message, 'error'));
+    // —— Unsubscribe ——
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    db.ref('follows/' + followId).remove()
+      .then(() => {
+        showToast('Unsubscribed', 'info');
+        updateFollowButton(targetId, false, null);
+        loadFollowerCount(targetId);
+      })
+      .catch(e => showToast('Error: ' + e.message, 'error'))
+      .finally(() => { if (btn) { btn.disabled = false; btn.style.opacity = '1'; } });
   } else {
-    // Subscribe
-    const ref = db.ref('follows').push();
-    ref.set({ followerId: uid, followingId: targetId, created_at: Date.now() }).then(() => {
-      showToast('Subscribed!', 'success');
-      if (btn) {
-        btn.className = btn.className.includes('w-full')
-          ? 'w-full py-3 rounded-xl font-semibold text-sm mb-5 transition bg-slate-700 text-slate-300'
-          : 'px-4 py-2 rounded-xl text-xs font-semibold transition bg-slate-700 text-slate-300';
-        btn.innerHTML = btn.className.includes('w-full')
-          ? '<i class="fas fa-user-check mr-2"></i>Subscribed'
-          : '<i class="fas fa-user-check mr-1"></i>Subscribed';
-        btn.onclick = function() { toggleFollow(targetId, ref.key); };
-      }
-      loadFollowerCount(targetId);
-      db.ref('notifications').push({
-        userId: targetId,
-        message: (state.userData?.name || 'Someone') + ' subscribed to you',
-        type: 'follow',
-        read: false,
-        created_at: Date.now()
-      });
-    }).catch(e => showToast('Error: ' + e.message, 'error'));
+    // —— Subscribe ——
+    // First check if already following (avoid duplicates)
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    db.ref('follows').orderByChild('followerId').equalTo(uid).once('value')
+      .then(snap => {
+        let alreadyId = null;
+        if (snap.exists()) {
+          snap.forEach(c => {
+            if (c.val() && c.val().followingId === targetId) alreadyId = c.key;
+          });
+        }
+        if (alreadyId) {
+          // Already subscribed — just update UI
+          showToast('Already subscribed', 'info');
+          updateFollowButton(targetId, true, alreadyId);
+          loadFollowerCount(targetId);
+          return;
+        }
+        const ref = db.ref('follows').push();
+        return ref.set({ followerId: uid, followingId: targetId, created_at: Date.now() })
+          .then(() => {
+            showToast('Subscribed!', 'success');
+            updateFollowButton(targetId, true, ref.key);
+            loadFollowerCount(targetId);
+            db.ref('notifications').push({
+              userId: targetId,
+              message: (state.userData?.name || 'Someone') + ' subscribed to you',
+              type: 'follow',
+              read: false,
+              created_at: Date.now()
+            });
+          });
+      })
+      .catch(e => showToast('Error: ' + e.message, 'error'))
+      .finally(() => { if (btn) { btn.disabled = false; btn.style.opacity = '1'; } });
   }
 }
 
@@ -3429,7 +3471,7 @@ function renderPublicProfilePage() {
             <p class="text-slate-500 text-xs mt-1">${formatNum(followerCount)} subscribers • ${myApps.length} apps</p>
             ${badgeChipsHTML}
           </div>
-          ${targetId!==uid?`<button onclick="toggleFollow('${targetId}','${followId||''}')" id="follow-btn-${targetId}" class="w-full py-3 rounded-xl font-semibold text-sm mb-5 transition ${followId?'bg-slate-700 text-slate-300':'bg-indigo-600 text-white'}">${followId?'<i class="fas fa-user-check mr-2"></i>Subscribed':'<i class="fas fa-user-plus mr-2"></i>Subscribe'}</button>`:''}
+          ${targetId!==uid?`<button onclick="toggleFollow('${targetId}','${followId||''}')" id="follow-btn-${targetId}" data-follow-id="${followId||''}" class="w-full py-3 rounded-xl font-semibold text-sm mb-5 transition ${followId?'bg-slate-700 text-slate-300':'bg-indigo-600 text-white'}">${followId?'<i class="fas fa-user-check mr-2"></i>Subscribed':'<i class="fas fa-user-plus mr-2"></i>Subscribe'}</button>`:''}
           ${(user.social_links?.telegram||user.social_links?.facebook||user.social_links?.tiktok||user.social_links?.youtube)?`
           <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 mb-5">
             <h3 class="text-white font-semibold text-sm mb-3">Social Links</h3>
