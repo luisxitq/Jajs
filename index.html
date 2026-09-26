@@ -629,7 +629,7 @@
       <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-xl">
         <span class="text-white text-3xl font-black">AN</span>
       </div>
-      <h1 class="text-2xl font-bold text-white">AN MOD APK</h1>
+      <h1 class="text-2xl font-bold text-white">MOD APK</h1>
       <p class="text-slate-400 text-sm mt-1">Sign in to continue</p>
     </div>
     <div class="w-full max-w-sm bg-slate-800 rounded-2xl p-6 shadow-2xl border border-slate-700">
@@ -1129,7 +1129,7 @@
       <span class="text-white font-black text-sm">AN</span>
     </div>
     <div class="flex-1">
-      <p class="text-sm font-semibold text-white">Install AN MOD APK</p>
+      <p class="text-sm font-semibold text-white">Install MOD APK</p>
       <p class="text-xs text-indigo-300">Add to home screen for quick access</p>
     </div>
     <button id="pwa-install-btn" class="bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-xl">Install</button>
@@ -1654,8 +1654,8 @@ function handleRoute() {
   if (activeNav) { activeNav.classList.add('active'); activeNav.querySelectorAll('.nav-icon,.nav-label').forEach(el=>{ el.classList.add('text-indigo-500'); el.classList.remove('text-slate-400'); }); }
   const pageEl=document.getElementById(`page-${page}`);
   if (pageEl) pageEl.classList.add('active');
-  const titles={ home:'MOD APK',search:'Search','app-detail':'App Detail',profile:'My Profile',notifications:'Notifications',publisher:'Publisher',admin:'Admin Panel',withdraw:'Withdraw','public-profile':'Profile','buy-coins':'Buy Coins' };
-  document.getElementById('header-title').textContent=titles[page]||'AN MOD APK';
+  const titles={ home:'APK',search:'Search','app-detail':'App Detail',profile:'My Profile',notifications:'Notifications',publisher:'Publisher',admin:'Admin Panel',withdraw:'Withdraw','public-profile':'Profile','buy-coins':'Buy Coins' };
+  document.getElementById('header-title').textContent=titles[page]||'MOD APK';
   if (param) {
     if (page==='app-detail') { state.currentAppId=param; renderAppDetailPage(); }
     else if (page==='public-profile') { state.viewingPublisherId=param; renderPublicProfilePage(); }
@@ -1917,7 +1917,7 @@ function simulateInstall(appId) { navigateTo('app-detail',appId); }
 function shareApp(appId) {
   const app=state.apps[appId]; if (!app) return;
   const url=window.location.origin+window.location.pathname+'#/app-detail/'+appId;
-  if (navigator.share) navigator.share({title:app.title,text:'Check out '+app.title+' on AN MOD APK!',url});
+  if (navigator.share) navigator.share({title:app.title,text:'Check out '+app.title+' on MOD APK!',url});
   else navigator.clipboard.writeText(url).then(()=>showToast('Link copied!','success'));
 }
 
@@ -3522,7 +3522,7 @@ function setupIntersectionObserver() {
    ================================================================ */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load',()=>{
-    const swCode=`const CACHE='an-mod-apk-v1';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/','/index.html'])));});self.addEventListener('fetch',e=>{if(!navigator.onLine){e.respondWith(caches.match(e.request).then(r=>r||new Response('<h1 style="font-family:sans-serif;text-align:center;padding:40px;color:#6366f1">AN MOD APK - Offline</h1>',{headers:{'Content-Type':'text/html'}})));}}); `;
+    const swCode=`const CACHE='an-mod-apk-v1';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/','/index.html'])));});self.addEventListener('fetch',e=>{if(!navigator.onLine){e.respondWith(caches.match(e.request).then(r=>r||new Response('<h1 style="font-family:sans-serif;text-align:center;padding:40px;color:#6366f1">MOD APK - Offline</h1>',{headers:{'Content-Type':'text/html'}})));}}); `;
     const blob=new Blob([swCode],{type:'application/javascript'});
     navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
   });
