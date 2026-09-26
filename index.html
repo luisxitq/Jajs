@@ -688,7 +688,9 @@
 
 <!-- MAIN APP CONTAINER -->
 <div id="app" class="hidden max-w-md mx-auto relative min-h-screen pb-20">
-  <div id="ptr-indicator" style="display:none;"></div>
+  <div id="ptr-indicator">
+    <i class="fas fa-arrow-down mr-2"></i> Pull to refresh
+  </div>
 
   <!-- Top Header - Fixed spacing issue -->
   <div class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800" style="margin-top:-0.5px">
@@ -1203,19 +1205,17 @@ function handleConnectionChange() {
 window.addEventListener('online', handleConnectionChange);
 window.addEventListener('offline', handleConnectionChange);
 
-/* ── Pull to refresh — NO visual "Pull to refresh" text, only toast when actually refreshing ── */
+/* ── Pull to refresh ──
+   - Indicator "Pull to refresh" only appears while pulling hard
+   - Toast "Refreshing..." ONLY appears when refresh actually runs
+   - High threshold so light touches do nothing
+*/
 function setupPullToRefresh() {
-  // Hide the indicator permanently (we only use toast)
   const ptrIndicator = document.getElementById('ptr-indicator');
-  if (ptrIndicator) {
-    ptrIndicator.style.display = 'none';
-    ptrIndicator.classList.remove('show');
-  }
-
   let startY = 0;
   let pulling = false;
   let maxDelta = 0;
-  const PULL_THRESHOLD = 120;
+  const PULL_THRESHOLD = 100; // need to pull ~100px
 
   function isModalOpen() {
     return !!document.querySelector('.modal-backdrop:not(.hidden)');
@@ -1246,18 +1246,31 @@ function setupPullToRefresh() {
   document.addEventListener('touchmove', (e) => {
     if (!pulling || isModalOpen()) {
       pulling = false;
+      if (ptrIndicator) ptrIndicator.classList.remove('show');
       return;
     }
     const deltaY = e.touches[0].pageY - startY;
     maxDelta = Math.max(maxDelta, deltaY);
+
+    // Show "Pull to refresh" only when past threshold (visual feedback)
+    if (ptrIndicator) {
+      if (deltaY >= PULL_THRESHOLD && window.scrollY <= 2) {
+        ptrIndicator.classList.add('show');
+      } else {
+        ptrIndicator.classList.remove('show');
+      }
+    }
   }, { passive: true });
 
   document.addEventListener('touchend', () => {
-    const shouldRefresh = pulling && maxDelta >= PULL_THRESHOLD && !isModalOpen() && window.scrollY <= 2;
+    const didPullEnough = pulling && maxDelta >= PULL_THRESHOLD && !isModalOpen() && window.scrollY <= 2;
+
+    if (ptrIndicator) ptrIndicator.classList.remove('show');
     pulling = false;
     maxDelta = 0;
 
-    if (shouldRefresh) {
+    // Toast "Refreshing..." ONLY when we actually refresh
+    if (didPullEnough) {
       if (navigator.onLine) {
         showToast('Refreshing...', 'info');
         loadApps();
